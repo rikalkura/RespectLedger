@@ -1,7 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using RespectLedger.Application.Common.Interfaces;
+using RespectLedger.Infrastructure.Authentication;
 using RespectLedger.Infrastructure.Data;
 using RespectLedger.Infrastructure.Data.Repositories;
 using RespectLedger.Infrastructure.ExternalServices;

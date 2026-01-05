@@ -8,7 +8,7 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
     public ApplicationDbContext CreateDbContext(string[] args)
     {
         DbContextOptionsBuilder<ApplicationDbContext> optionsBuilder = new();
-        optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=RespectLedgerDb;Trusted_Connection=true;TrustServerCertificate=true;");
+        optionsBuilder.UseSqlServer("Server=localhost;Database=RespectLedgerDb;Trusted_Connection=true;TrustServerCertificate=true;");
 
         return new ApplicationDbContext(optionsBuilder.Options);
     }

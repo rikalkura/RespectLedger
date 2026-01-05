@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RespectLedger.Application.Common.Interfaces;
 using RespectLedger.Application.Features.Respects.Commands.GiveRespect;
 using RespectLedger.Application.Features.Respects.Commands.LikeRespect;
+using RespectLedger.Application.Features.Respects.DTOs;
 using RespectLedger.Application.Features.Respects.Queries.GetGlobalFeed;
 using RespectLedger.Application.Features.Respects.Queries.GetUserRespectHistory;
 using System.Security.Claims;

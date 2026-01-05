@@ -1,7 +1,7 @@
 using Ardalis.Result;
-using Mapster;
 using MediatR;
 using RespectLedger.Application.Common.Interfaces;
+using RespectLedger.Application.Features.Respects.DTOs;
 using RespectLedger.Domain.Common;
 using RespectLedger.Domain.Entities;
 using RespectLedger.Domain.Enums;
@@ -65,7 +65,7 @@ public class GiveRespectCommandHandler : IRequestHandler<GiveRespectCommand, Res
         await _manaService.EnsureManaResetAsync(sender, cancellationToken);
         sender = await _userRepository.GetByIdAsync(request.SenderId, cancellationToken); // Reload
 
-        if (!await _manaService.HasSufficientManaAsync(sender, 1, cancellationToken))
+        if (sender == null || !await _manaService.HasSufficientManaAsync(sender, 1, cancellationToken))
         {
             return Result<RespectDto>.Invalid(new List<ValidationError>
             {
@@ -121,14 +121,24 @@ public class GiveRespectCommandHandler : IRequestHandler<GiveRespectCommand, Res
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Map to DTO
-        RespectDto dto = respect.Adapt<RespectDto>();
-        dto = dto with
+        RespectDto dto = new()
         {
+            Id = respect.Id,
+            SenderId = respect.SenderId,
             SenderNickname = sender.Nickname,
             SenderAvatarUrl = sender.AvatarUrl,
+            ReceiverId = respect.ReceiverId,
             ReceiverNickname = receiver.Nickname,
             ReceiverAvatarUrl = receiver.AvatarUrl,
-            SeasonName = currentSeason.Name
+            SeasonId = respect.SeasonId,
+            SeasonName = currentSeason.Name,
+            Amount = respect.Amount,
+            Reason = respect.Reason,
+            Tag = respect.Tag,
+            ImageUrl = respect.ImageUrl,
+            LikeCount = 0,
+            UserLiked = false,
+            CreatedAt = respect.CreatedAt
         };
 
         return Result<RespectDto>.Success(dto);

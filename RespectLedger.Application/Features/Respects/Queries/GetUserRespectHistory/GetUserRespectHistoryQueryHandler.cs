@@ -10,11 +10,16 @@ public class GetUserRespectHistoryQueryHandler : IRequestHandler<GetUserRespectH
 {
     private readonly IRespectRepository _respectRepository;
     private readonly IRepository<User> _userRepository;
+    private readonly IRespectLikeRepository _respectLikeRepository;
 
-    public GetUserRespectHistoryQueryHandler(IRespectRepository respectRepository, IRepository<User> userRepository)
+    public GetUserRespectHistoryQueryHandler(
+        IRespectRepository respectRepository,
+        IRepository<User> userRepository,
+        IRespectLikeRepository respectLikeRepository)
     {
         _respectRepository = respectRepository;
         _userRepository = userRepository;
+        _respectLikeRepository = respectLikeRepository;
     }
 
     public async Task<Result<PagedResult<RespectDto>>> Handle(GetUserRespectHistoryQuery request, CancellationToken cancellationToken)
@@ -53,23 +58,31 @@ public class GetUserRespectHistoryQueryHandler : IRequestHandler<GetUserRespectH
             .Take(request.PageSize)
             .ToList();
 
-        List<RespectDto> dtos = paginatedRespects.Select(r => new RespectDto
+        List<RespectDto> dtos = new();
+        foreach (Respect r in paginatedRespects)
         {
-            Id = r.Id,
-            SenderId = r.SenderId,
-            SenderNickname = r.Sender?.Nickname ?? string.Empty,
-            SenderAvatarUrl = r.Sender?.AvatarUrl,
-            ReceiverId = r.ReceiverId,
-            ReceiverNickname = r.Receiver?.Nickname ?? string.Empty,
-            ReceiverAvatarUrl = r.Receiver?.AvatarUrl,
-            SeasonId = r.SeasonId,
-            SeasonName = r.Season?.Name ?? string.Empty,
-            Amount = r.Amount,
-            Reason = r.Reason,
-            Tag = r.Tag,
-            ImageUrl = r.ImageUrl,
-            CreatedAt = r.CreatedAt
-        }).ToList();
+            int likeCount = await _respectLikeRepository.GetLikeCountAsync(r.Id, cancellationToken);
+
+            dtos.Add(new RespectDto
+            {
+                Id = r.Id,
+                SenderId = r.SenderId,
+                SenderNickname = r.Sender?.Nickname ?? string.Empty,
+                SenderAvatarUrl = r.Sender?.AvatarUrl,
+                ReceiverId = r.ReceiverId,
+                ReceiverNickname = r.Receiver?.Nickname ?? string.Empty,
+                ReceiverAvatarUrl = r.Receiver?.AvatarUrl,
+                SeasonId = r.SeasonId,
+                SeasonName = r.Season?.Name ?? string.Empty,
+                Amount = r.Amount,
+                Reason = r.Reason,
+                Tag = r.Tag,
+                ImageUrl = r.ImageUrl,
+                LikeCount = likeCount,
+                UserLiked = false, // Will be set in API layer based on current user
+                CreatedAt = r.CreatedAt
+            });
+        }
 
         PagedResult<RespectDto> result = new()
         {

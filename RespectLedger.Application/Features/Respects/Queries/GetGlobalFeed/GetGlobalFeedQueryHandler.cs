@@ -1,5 +1,4 @@
 using Ardalis.Result;
-using Mapster;
 using MediatR;
 using RespectLedger.Application.Common.Interfaces;
 using RespectLedger.Application.Features.Respects.DTOs;
@@ -10,10 +9,14 @@ namespace RespectLedger.Application.Features.Respects.Queries.GetGlobalFeed;
 public class GetGlobalFeedQueryHandler : IRequestHandler<GetGlobalFeedQuery, Result<PagedResult<RespectDto>>>
 {
     private readonly IRespectRepository _respectRepository;
+    private readonly IRespectLikeRepository _respectLikeRepository;
 
-    public GetGlobalFeedQueryHandler(IRespectRepository respectRepository)
+    public GetGlobalFeedQueryHandler(
+        IRespectRepository respectRepository,
+        IRespectLikeRepository respectLikeRepository)
     {
         _respectRepository = respectRepository;
+        _respectLikeRepository = respectLikeRepository;
     }
 
     public async Task<Result<PagedResult<RespectDto>>> Handle(GetGlobalFeedQuery request, CancellationToken cancellationToken)
@@ -41,23 +44,31 @@ public class GetGlobalFeedQueryHandler : IRequestHandler<GetGlobalFeedQuery, Res
 
         int totalCount = await _respectRepository.CountAsync(cancellationToken: cancellationToken);
 
-        List<RespectDto> dtos = respects.Select(r => new RespectDto
+        List<RespectDto> dtos = new();
+        foreach (Respect r in respects)
         {
-            Id = r.Id,
-            SenderId = r.SenderId,
-            SenderNickname = r.Sender?.Nickname ?? string.Empty,
-            SenderAvatarUrl = r.Sender?.AvatarUrl,
-            ReceiverId = r.ReceiverId,
-            ReceiverNickname = r.Receiver?.Nickname ?? string.Empty,
-            ReceiverAvatarUrl = r.Receiver?.AvatarUrl,
-            SeasonId = r.SeasonId,
-            SeasonName = r.Season?.Name ?? string.Empty,
-            Amount = r.Amount,
-            Reason = r.Reason,
-            Tag = r.Tag,
-            ImageUrl = r.ImageUrl,
-            CreatedAt = r.CreatedAt
-        }).ToList();
+            int likeCount = await _respectLikeRepository.GetLikeCountAsync(r.Id, cancellationToken);
+
+            dtos.Add(new RespectDto
+            {
+                Id = r.Id,
+                SenderId = r.SenderId,
+                SenderNickname = r.Sender?.Nickname ?? string.Empty,
+                SenderAvatarUrl = r.Sender?.AvatarUrl,
+                ReceiverId = r.ReceiverId,
+                ReceiverNickname = r.Receiver?.Nickname ?? string.Empty,
+                ReceiverAvatarUrl = r.Receiver?.AvatarUrl,
+                SeasonId = r.SeasonId,
+                SeasonName = r.Season?.Name ?? string.Empty,
+                Amount = r.Amount,
+                Reason = r.Reason,
+                Tag = r.Tag,
+                ImageUrl = r.ImageUrl,
+                LikeCount = likeCount,
+                UserLiked = false, // Will be set in API layer based on current user
+                CreatedAt = r.CreatedAt
+            });
+        }
 
         PagedResult<RespectDto> result = new()
         {

@@ -11,6 +11,7 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Respect> Respects => Set<Respect>();
+    public DbSet<RespectLike> RespectLikes => Set<RespectLike>();
     public DbSet<Season> Seasons => Set<Season>();
     public DbSet<SeasonResult> SeasonResults => Set<SeasonResult>();
     public DbSet<Achievement> Achievements => Set<Achievement>();

@@ -30,6 +30,10 @@ public class GetManaBalanceQueryHandler : IRequestHandler<GetManaBalanceQuery, R
 
         // Reload user to get updated mana
         user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
+        if (user == null)
+        {
+            return Result<ManaBalanceDto>.NotFound();
+        }
 
         DateTime? nextReset = user.LastManaReset?.Date.AddDays(1).AddHours(23).AddMinutes(59).AddSeconds(59);
 

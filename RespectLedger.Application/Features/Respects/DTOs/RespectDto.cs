@@ -15,5 +15,7 @@ public record RespectDto
     public string Reason { get; init; } = string.Empty;
     public string? Tag { get; init; }
     public string? ImageUrl { get; init; }
+    public int LikeCount { get; init; }
+    public bool UserLiked { get; init; }
     public DateTime CreatedAt { get; init; }
 }

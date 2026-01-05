@@ -1,0 +1,6 @@
+@RespectLedger.API_HostAddress = http://localhost:5258
+
+GET {{RespectLedger.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

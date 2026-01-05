@@ -1,0 +1,53 @@
+# Project Context
+You are an expert .NET 10 and React developer working on "Respect Ledger" - a gamified social app.
+The architecture is Strict Clean Architecture with CQRS.
+
+# Technology Stack
+- Backend: .NET 10, ASP.NET Core Web API
+- Database: Microsoft SQL Server (Azure SQL)
+- ORM: Entity Framework Core (Used for BOTH Commands and Queries)
+- Validation: FluentValidation (Application Layer) + Ardalis.GuardClauses (Domain Layer)
+- Frontend: React 19, Vite, Tailwind CSS, shadcn/ui, TanStack Query
+
+# Architecture Guidelines (Strict Enforcement)
+
+## 1. Domain Layer (RespectLedger.Domain)
+- MUST be independent. NO references to Application, Infrastructure, or API.
+- Use `Ardalis.GuardClauses` inside Entity constructors and methods to enforce invariants.
+- Entities must have private setters and public methods for state mutation (Encapsulation).
+- Use `Result<T>` pattern for return types, avoid throwing exceptions for logic flow.
+
+## 2. Application Layer (RespectLedger.Application)
+- Implements CQRS using `MediatR`.
+- Separate folders for `Commands` and `Queries` (e.g., `Features/Respects/Commands/GiveRespect`).
+- Use `FluentValidation` behaviors for pipeline validation.
+- Commands return `Result` or `Result<T>`.
+- Mappings should be explicit or use Mapster.
+
+## 3. Infrastructure Layer (RespectLedger.Infrastructure)
+- Implements interfaces defined in Application/Domain.
+- EF Core `DbContext` configuration (SQL Server).
+- Implements `IRepository<T>` or specific repositories using EF Core.
+- External services (Cloudinary, Email).
+
+## 4. API Layer (RespectLedger.API)
+- Controllers should be thin. They simply send MediatR commands/queries and map Results to HTTP responses.
+- Use Global Exception Handling middleware.
+
+# Coding Standards
+- Use file-scoped namespaces.
+- Use `record` for DTOs, Commands, and Queries.
+- Use `async/await` for all I/O operations.
+- Prefer explicit variable types over `var` when the type is not obvious from the right side.
+
+# Specific Business Rules
+- **EF Core Usage:**
+  - For **Commands** (Writes): Fetch entities with tracking, modify, and call `SaveChangesAsync`.
+  - For **Queries** (Reads): MUST use `.AsNoTracking()` for performance optimization.
+- Authentication: Prepare for JWT implementation (Infrastructure layer).
+- Dates: Use `DateTime.UtcNow` and store as `datetime2` in SQL.
+
+# Interaction Protocol (CRITICAL)
+- **Consult before Deciding:** If you encounter an error, ambiguity, or multiple ways to implement a feature, **DO NOT assume**. Stop and ask the user.
+- **Propose & Validate:** When asking, explicitly state: "I recommend option A because [reason]. Should I proceed with this, or do you prefer another way?"
+- **Step-by-Step:** Do not generate massive blocks of code blindly. Confirm the approach with the user first.

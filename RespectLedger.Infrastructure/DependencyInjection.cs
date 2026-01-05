@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using RespectLedger.Application.Common.Interfaces;
 using RespectLedger.Infrastructure.Data;
 using RespectLedger.Infrastructure.Data.Repositories;
+using RespectLedger.Infrastructure.ExternalServices;
 
 namespace RespectLedger.Infrastructure;
 

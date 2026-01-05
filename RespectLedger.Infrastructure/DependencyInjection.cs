@@ -7,7 +7,8 @@ using RespectLedger.Application.Common.Interfaces;
 using RespectLedger.Infrastructure.Authentication;
 using RespectLedger.Infrastructure.Data;
 using RespectLedger.Infrastructure.Data.Repositories;
-using System.Text;
+using RespectLedger.Infrastructure.ExternalServices;
+using RespectLedger.Infrastructure.Services;
 
 namespace RespectLedger.Infrastructure;
 
@@ -26,33 +27,11 @@ public static class DependencyInjection
         services.AddScoped<IRespectRepository, RespectRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // Authentication Services
-        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
-        services.AddScoped<IPasswordHasher, PasswordHasher>();
+        // External Services
+        services.AddScoped<IImageStorageService, CloudinaryService>();
 
-        // JWT Authentication
-        string secretKey = configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
-        string issuer = configuration["Jwt:Issuer"] ?? "RespectLedger";
-        string audience = configuration["Jwt:Audience"] ?? "RespectLedger";
-
-        services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = issuer,
-                ValidAudience = audience,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
-            };
-        });
+        // Domain Services
+        services.AddScoped<IManaService, ManaService>();
 
         return services;
     }

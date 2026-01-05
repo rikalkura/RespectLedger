@@ -22,6 +22,9 @@ public static class DependencyInjection
         services.AddScoped<IRespectRepository, RespectRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+        // External Services
+        services.AddScoped<IImageStorageService, CloudinaryService>();
+
         return services;
     }
 }

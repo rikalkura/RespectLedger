@@ -18,11 +18,6 @@ public class RespectLikeConfiguration : IEntityTypeConfiguration<RespectLike>
         builder.Property(rl => rl.UserId)
             .IsRequired();
 
-        builder.Property(rl => rl.CreatedAt)
-            .IsRequired()
-            .HasColumnType("datetime2")
-            .HasDefaultValueSql("GETUTCDATE()");
-
         // Unique constraint - one like per user per respect
         builder.HasIndex(rl => new { rl.RespectId, rl.UserId })
             .IsUnique();

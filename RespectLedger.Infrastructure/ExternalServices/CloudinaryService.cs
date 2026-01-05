@@ -25,8 +25,7 @@ public class CloudinaryService : IImageStorageService
         {
             File = new FileDescription(fileName, imageStream),
             Folder = "respectledger",
-            Overwrite = true,
-            ResourceType = ResourceType.Image
+            Overwrite = true
         };
 
         ImageUploadResult uploadResult = await _cloudinary.UploadAsync(uploadParams);

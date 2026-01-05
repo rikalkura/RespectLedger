@@ -6,7 +6,6 @@ public class RespectLike : BaseEntity<int>
 {
     public int RespectId { get; private set; }
     public Guid UserId { get; private set; }
-    public DateTime CreatedAt { get; private set; }
 
     // Navigation properties
     public Respect Respect { get; private set; } = null!;
@@ -21,6 +20,5 @@ public class RespectLike : BaseEntity<int>
 
         RespectId = respectId;
         UserId = userId;
-        CreatedAt = DateTime.UtcNow;
     }
 }

@@ -34,7 +34,13 @@ public class User : BaseEntity<Guid>
         Guard.Against.NullOrWhiteSpace(email, nameof(email));
         Guard.Against.NullOrWhiteSpace(passwordHash, nameof(passwordHash));
         Guard.Against.StringTooLong(nickname, 50, nameof(nickname));
-        Guard.Against.InvalidEmail(email, nameof(email));
+        Guard.Against.StringTooLong(email, 255, nameof(email));
+        
+        // Basic email validation
+        if (!email.Contains('@') || !email.Contains('.'))
+        {
+            throw new ArgumentException("Invalid email format", nameof(email));
+        }
 
         Id = Guid.NewGuid();
         Nickname = nickname;
@@ -138,5 +144,11 @@ public class User : BaseEntity<Guid>
     public bool IsAdmin()
     {
         return Role == UserRole.Admin;
+    }
+
+    public void PromoteToAdmin()
+    {
+        Role = UserRole.Admin;
+        MarkAsUpdated();
     }
 }

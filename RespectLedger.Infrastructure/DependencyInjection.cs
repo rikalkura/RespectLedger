@@ -5,6 +5,7 @@ using RespectLedger.Application.Common.Interfaces;
 using RespectLedger.Infrastructure.Data;
 using RespectLedger.Infrastructure.Data.Repositories;
 using RespectLedger.Infrastructure.ExternalServices;
+using RespectLedger.Infrastructure.Services;
 
 namespace RespectLedger.Infrastructure;
 
@@ -25,6 +26,9 @@ public static class DependencyInjection
 
         // External Services
         services.AddScoped<IImageStorageService, CloudinaryService>();
+
+        // Domain Services
+        services.AddScoped<IManaService, ManaService>();
 
         return services;
     }

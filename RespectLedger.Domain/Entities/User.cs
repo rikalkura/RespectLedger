@@ -21,6 +21,11 @@ public class User : BaseEntity<Guid>
     public int CurrentLevel { get; private set; }
     public string CurrentClass { get; private set; } = "Novice";
     
+    // Navigation properties
+    public ICollection<Respect> SentRespects { get; private set; } = new List<Respect>();
+    public ICollection<Respect> ReceivedRespects { get; private set; } = new List<Respect>();
+    public ICollection<UserAchievement> UserAchievements { get; private set; } = new List<UserAchievement>();
+    
     private User() { } // EF Core constructor
 
     public User(string nickname, string email, string passwordHash)

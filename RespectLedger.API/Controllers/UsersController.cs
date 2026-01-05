@@ -1,9 +1,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RespectLedger.Application.Features.Users.Commands.ApproveUser;
 using RespectLedger.Application.Features.Users.Commands.UpdateProfile;
 using RespectLedger.Application.Features.Users.Commands.UploadAvatar;
 using RespectLedger.Application.Features.Users.Queries.GetCurrentUser;
+using RespectLedger.Application.Features.Users.Queries.GetPendingUsers;
 using System.Security.Claims;
 
 namespace RespectLedger.API.Controllers;
@@ -63,6 +65,36 @@ public class UsersController : ControllerBase
         }
 
         return Ok(result.Value);
+    }
+
+    [HttpGet("pending")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetPendingUsers(CancellationToken cancellationToken)
+    {
+        var query = new GetPendingUsersQuery();
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result.Errors);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpPost("{userId}/approve")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ApproveUser(Guid userId, CancellationToken cancellationToken)
+    {
+        var command = new ApproveUserCommand(userId);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result.Errors);
+        }
+
+        return Ok();
     }
 
     private Guid GetCurrentUserId()

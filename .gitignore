@@ -18,7 +18,7 @@ yarn-error.log*
 .env.production.local
 
 # Config files with secrets (if they contain API keys, credentials, etc.)
-config/cloudinary.js
+# config/cloudinary.js - Now uses environment variables, safe to commit
 # Uncomment the line below if database.js contains secrets
 # config/database.js
 

@@ -5,19 +5,19 @@ const { dbGet, dbAll, dbRun } = require('../config/database');
 const { getPendingCompletionsCount, getUnreadNotificationsCount } = require('../utils/stats');
 
 // GET /quests
-router.get('/quests', requireAuth, (req, res) => {
+router.get('/quests', requireAuth, async (req, res) => {
   // Refresh user data
-  req.session.user = dbGet('SELECT * FROM Users WHERE id = ?', [req.session.user.id]);
+  req.session.user = await dbGet('SELECT * FROM Users WHERE id = $1', [req.session.user.id]);
   
   const userId = req.session.user.id;
   
   // Get all active quests
-  const quests = dbAll('SELECT * FROM Quests WHERE is_active = 1 ORDER BY reward DESC');
+  const quests = await dbAll('SELECT * FROM Quests WHERE is_active = 1 ORDER BY reward DESC');
   
   // Get user's quest completion statuses
-  const userCompletions = dbAll(`
+  const userCompletions = await dbAll(`
     SELECT quest_id, status FROM QuestCompletions 
-    WHERE user_id = ?
+    WHERE user_id = $1
   `, [userId]);
   
   // Create a map for quick lookup
@@ -32,8 +32,8 @@ router.get('/quests', requireAuth, (req, res) => {
     userStatus: completionMap[quest.id] || null // null = not submitted, 'PENDING', 'APPROVED', 'REJECTED'
   }));
   
-  const pendingCount = req.session.user.is_admin ? getPendingCompletionsCount() : 0;
-  const notificationCount = req.session.user.is_admin ? getUnreadNotificationsCount(req.session.user.id) : 0;
+  const pendingCount = req.session.user.is_admin ? await getPendingCompletionsCount() : 0;
+  const notificationCount = req.session.user.is_admin ? await getUnreadNotificationsCount(req.session.user.id) : 0;
   
   res.render('quests', { 
     quests: questsWithStatus, 
@@ -44,20 +44,20 @@ router.get('/quests', requireAuth, (req, res) => {
 });
 
 // POST /quests/submit/:questId
-router.post('/quests/submit/:questId', requireAuth, (req, res) => {
+router.post('/quests/submit/:questId', requireAuth, async (req, res) => {
   const questId = parseInt(req.params.questId);
   const userId = req.session.user.id;
   
-  const quest = dbGet('SELECT * FROM Quests WHERE id = ? AND is_active = 1', [questId]);
+  const quest = await dbGet('SELECT * FROM Quests WHERE id = $1 AND is_active = 1', [questId]);
   if (!quest) {
     req.session.flash = { type: 'error', message: 'Quest not found or not active!' };
     return res.redirect('/quests');
   }
   
   // Check if user already has a pending or approved completion for this quest
-  const existingCompletion = dbGet(`
+  const existingCompletion = await dbGet(`
     SELECT * FROM QuestCompletions 
-    WHERE quest_id = ? AND user_id = ? AND status IN ('PENDING', 'APPROVED')
+    WHERE quest_id = $1 AND user_id = $2 AND status IN ('PENDING', 'APPROVED')
   `, [questId, userId]);
   
   if (existingCompletion) {
@@ -70,23 +70,23 @@ router.post('/quests/submit/:questId', requireAuth, (req, res) => {
   }
   
   // Check if there's a rejected completion - allow resubmission
-  const rejectedCompletion = dbGet(`
+  const rejectedCompletion = await dbGet(`
     SELECT * FROM QuestCompletions 
-    WHERE quest_id = ? AND user_id = ? AND status = 'REJECTED'
+    WHERE quest_id = $1 AND user_id = $2 AND status = 'REJECTED'
   `, [questId, userId]);
   
   if (rejectedCompletion) {
     // Update existing rejected to pending
-    dbRun(`
+    await dbRun(`
       UPDATE QuestCompletions 
       SET status = 'PENDING', submitted_at = CURRENT_TIMESTAMP, reviewed_at = NULL, reviewed_by = NULL
-      WHERE id = ?
+      WHERE id = $1
     `, [rejectedCompletion.id]);
   } else {
     // Create new completion request
-    dbRun(`
+    await dbRun(`
       INSERT INTO QuestCompletions (quest_id, user_id, status)
-      VALUES (?, ?, 'PENDING')
+      VALUES ($1, $2, 'PENDING')
     `, [questId, userId]);
   }
   

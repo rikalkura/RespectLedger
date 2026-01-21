@@ -3,20 +3,20 @@ const router = express.Router();
 const { dbAll, dbGet } = require('../config/database');
 
 // GET /login
-router.get('/login', (req, res) => {
+router.get('/login', async (req, res) => {
   if (req.session.user) {
     return res.redirect('/');
   }
-  const users = dbAll('SELECT id, name, avatar_emoji FROM Users');
+  const users = await dbAll('SELECT id, name, avatar_emoji FROM Users');
   res.render('login', { users });
 });
 
 // POST /login
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { user_id, pin_code } = req.body;
   
   // Debug: Check what user exists with this ID
-  const userById = dbGet('SELECT * FROM Users WHERE id = ?', [user_id]);
+  const userById = await dbGet('SELECT * FROM Users WHERE id = $1', [user_id]);
   
   if (!userById) {
     req.session.flash = { type: 'error', message: 'User not found!' };
@@ -31,7 +31,7 @@ router.post('/login', (req, res) => {
     pinsMatch: pin_code === userById.pin_code
   });
   
-  const user = dbGet('SELECT * FROM Users WHERE id = ? AND pin_code = ?', [user_id, pin_code]);
+  const user = await dbGet('SELECT * FROM Users WHERE id = $1 AND pin_code = $2', [user_id, pin_code]);
   
   if (user) {
     req.session.user = user;

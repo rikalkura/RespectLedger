@@ -5,7 +5,7 @@ const { dbGet, dbRun } = require('../config/database');
 const { recalculateUserBalance } = require('../utils/stats');
 
 // POST /respect/:userId
-router.post('/respect/:userId', requireAuth, (req, res) => {
+router.post('/respect/:userId', requireAuth, async (req, res) => {
   // Only admins can give respects/disrespects
   if (!req.session.user.is_admin) {
     req.session.flash = { type: 'error', message: 'Only admins can give respects!' };
@@ -21,7 +21,7 @@ router.post('/respect/:userId', requireAuth, (req, res) => {
     return res.redirect('/');
   }
   
-  const toUser = dbGet('SELECT * FROM Users WHERE id = ?', [toUserId]);
+  const toUser = await dbGet('SELECT * FROM Users WHERE id = $1', [toUserId]);
   if (!toUser) {
     req.session.flash = { type: 'error', message: 'User not found!' };
     return res.redirect('/');
@@ -34,20 +34,20 @@ router.post('/respect/:userId', requireAuth, (req, res) => {
   }
   
   // Create transaction
-  dbRun(`
+  await dbRun(`
     INSERT INTO Transactions (from_user_id, to_user_id, type, amount, description)
-    VALUES (?, ?, 'RESPECT', 1, ?)
+    VALUES ($1, $2, 'RESPECT', 1, $3)
   `, [fromUserId, toUserId, description || 'Gave respect']);
   
   // Recalculate balance (respects - disrespects)
-  recalculateUserBalance(toUserId);
+  await recalculateUserBalance(toUserId);
   
   req.session.flash = { type: 'success', message: `You gave respect to ${toUser.name}! 🟢` };
   res.redirect('/');
 });
 
 // POST /disrespect/:userId
-router.post('/disrespect/:userId', requireAuth, (req, res) => {
+router.post('/disrespect/:userId', requireAuth, async (req, res) => {
   // Only admins can give respects/disrespects
   if (!req.session.user.is_admin) {
     req.session.flash = { type: 'error', message: 'Only admins can give disrespects!' };
@@ -63,7 +63,7 @@ router.post('/disrespect/:userId', requireAuth, (req, res) => {
     return res.redirect('/');
   }
   
-  const toUser = dbGet('SELECT * FROM Users WHERE id = ?', [toUserId]);
+  const toUser = await dbGet('SELECT * FROM Users WHERE id = $1', [toUserId]);
   if (!toUser) {
     req.session.flash = { type: 'error', message: 'User not found!' };
     return res.redirect('/');
@@ -76,13 +76,13 @@ router.post('/disrespect/:userId', requireAuth, (req, res) => {
   }
   
   // Create transaction
-  dbRun(`
+  await dbRun(`
     INSERT INTO Transactions (from_user_id, to_user_id, type, amount, description)
-    VALUES (?, ?, 'DISRESPECT', -1, ?)
+    VALUES ($1, $2, 'DISRESPECT', -1, $3)
   `, [fromUserId, toUserId, description || 'Gave disrespect']);
   
   // Recalculate balance (respects - disrespects)
-  recalculateUserBalance(toUserId);
+  await recalculateUserBalance(toUserId);
   
   req.session.flash = { type: 'success', message: `You gave disrespect to ${toUser.name}! 🔴` };
   res.redirect('/');

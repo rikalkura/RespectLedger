@@ -54,7 +54,7 @@ async function startServer() {
   
   // Recalculate all balances on startup (fixes existing data)
   const { recalculateAllBalances } = require('./utils/stats');
-  recalculateAllBalances();
+  await recalculateAllBalances();
   console.log('✅ Recalculated all user balances');
   
   app.listen(PORT, () => {

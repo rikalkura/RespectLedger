@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quests - Respect Ledger</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .card-hover { transition: all 0.3s ease; }
+    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4); }
+  </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen pb-24">
+  <div class="max-w-2xl mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+          <span>⚔️</span> Quests
+        </h1>
+        <p class="text-slate-400 text-sm">Complete quests to earn respect</p>
+      </div>
+      <div class="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2">
+        <div class="flex items-center gap-2">
+          <span class="text-yellow-400 text-lg">🥚</span>
+          <span class="font-bold text-yellow-400 text-xl"><%= currentUser.balance %></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quest Status Legend -->
+    <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-6">
+      <h3 class="text-sm font-medium text-slate-400 mb-2">Quest Status</h3>
+      <div class="flex flex-wrap gap-4 text-sm">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-green-500"></span>
+          <span class="text-slate-300">Available</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+          <span class="text-slate-300">Pending Approval</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+          <span class="text-slate-300">Completed</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-red-500"></span>
+          <span class="text-slate-300">Rejected</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quests List -->
+    <% if (quests.length === 0) { %>
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-12 text-center">
+      <div class="text-5xl mb-4">⚔️</div>
+      <h3 class="text-xl font-semibold text-white mb-2">No Active Quests</h3>
+      <p class="text-slate-400">Check back later for new quests!</p>
+    </div>
+    <% } else { %>
+    <div class="space-y-4">
+      <% quests.forEach(quest => { %>
+      <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden card-hover
+                  <%= quest.userStatus === 'APPROVED' ? 'border-blue-500/50' : quest.userStatus === 'PENDING' ? 'border-yellow-500/50' : quest.userStatus === 'REJECTED' ? 'border-red-500/50' : '' %>">
+        <div class="p-5">
+          <div class="flex items-start gap-4">
+            <!-- Quest Icon & Status -->
+            <div class="relative">
+              <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center text-2xl">
+                ⚔️
+              </div>
+              <!-- Status indicator -->
+              <div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-slate-800
+                          <%= quest.userStatus === 'APPROVED' ? 'bg-blue-500' : quest.userStatus === 'PENDING' ? 'bg-yellow-500' : quest.userStatus === 'REJECTED' ? 'bg-red-500' : 'bg-green-500' %>">
+              </div>
+            </div>
+            
+            <!-- Quest Details -->
+            <div class="flex-1">
+              <h3 class="font-semibold text-white text-lg mb-1"><%= quest.title %></h3>
+              <div class="flex items-center gap-3">
+                <span class="text-purple-400 font-medium">+<%= quest.reward %> 🥚</span>
+                <span class="text-green-400 text-sm">+<%= quest.reward %> 👍 Respect</span>
+              </div>
+              
+              <% if (quest.userStatus === 'PENDING') { %>
+                <p class="text-yellow-400 text-sm mt-2">⏳ Waiting for admin approval...</p>
+              <% } else if (quest.userStatus === 'APPROVED') { %>
+                <p class="text-blue-400 text-sm mt-2">✅ Quest completed!</p>
+              <% } else if (quest.userStatus === 'REJECTED') { %>
+                <p class="text-red-400 text-sm mt-2">❌ Submission rejected - you can try again</p>
+              <% } %>
+            </div>
+            
+            <!-- Action Button -->
+            <div class="flex-shrink-0">
+              <% if (quest.userStatus === 'APPROVED') { %>
+                <div class="px-4 py-2.5 bg-blue-600/20 text-blue-400 font-medium rounded-lg text-center">
+                  Done ✓
+                </div>
+              <% } else if (quest.userStatus === 'PENDING') { %>
+                <div class="px-4 py-2.5 bg-yellow-600/20 text-yellow-400 font-medium rounded-lg text-center">
+                  Pending...
+                </div>
+              <% } else { %>
+                <form action="/quests/submit/<%= quest.id %>" method="POST">
+                  <button 
+                    type="submit"
+                    class="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 
+                           text-white font-semibold rounded-lg transition-all whitespace-nowrap"
+                  >
+                    <%= quest.userStatus === 'REJECTED' ? 'Try Again' : 'Complete' %>
+                  </button>
+                </form>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+      <% }); %>
+    </div>
+    <% } %>
+
+    <!-- Info Box -->
+    <div class="mt-6 bg-indigo-900/30 border border-indigo-700/50 rounded-xl p-4">
+      <h3 class="font-semibold text-indigo-300 mb-2">How Quests Work</h3>
+      <ol class="text-sm text-indigo-200/80 space-y-1 list-decimal list-inside">
+        <li>Click "Complete" when you've finished a quest</li>
+        <li>Wait for an admin to verify and approve your completion</li>
+        <li>Once approved, you will receive a reward in the form of a certain number of respect points!</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Fixed Bottom Navigation -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-slate-700 z-40">
+    <div class="max-w-lg mx-auto px-4">
+      <div class="flex justify-around items-center h-16">
+        <a href="/" class="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+          </svg>
+          <span class="text-xs font-medium">Home</span>
+        </a>
+        
+        <a href="/quests" class="flex flex-col items-center gap-1 text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+          </svg>
+          <span class="text-xs font-medium">Quests</span>
+        </a>
+        
+        <a href="/shop" class="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+          </svg>
+          <span class="text-xs font-medium">Shop</span>
+        </a>
+        
+        <% if (user.is_admin) { %>
+        <a href="/admin" class="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors relative">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span class="text-xs font-medium">Admin</span>
+          <% 
+            const totalBadgeCount = (typeof pendingCount !== 'undefined' ? pendingCount : 0) + 
+                                    (typeof notificationCount !== 'undefined' ? notificationCount : 0);
+          %>
+          <% if (totalBadgeCount > 0) { %>
+          <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+            <%= totalBadgeCount %>
+          </span>
+          <% } %>
+        </a>
+        <% } %>
+        
+        <a href="/logout" class="flex flex-col items-center gap-1 text-slate-400 hover:text-red-400 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+          <span class="text-xs font-medium">Logout</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash Messages -->
+  <% if (flash) { %>
+  <div id="flash-message" class="fixed top-4 right-4 z-50 max-w-sm">
+    <div class="<%= flash.type === 'error' ? 'bg-red-500' : 'bg-green-500' %> text-white px-6 py-4 rounded-lg shadow-xl flex items-center gap-3">
+      <% if (flash.type === 'error') { %>
+        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      <% } else { %>
+        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      <% } %>
+      <span class="font-medium"><%= flash.message %></span>
+    </div>
+  </div>
+  <script>
+    setTimeout(() => {
+      const flash = document.getElementById('flash-message');
+      if (flash) {
+        flash.style.transition = 'opacity 0.5s';
+        flash.style.opacity = '0';
+        setTimeout(() => flash.remove(), 500);
+      }
+    }, 3000);
+  </script>
+  <% } %>
+</body>
+</html>

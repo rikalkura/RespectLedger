@@ -42,7 +42,7 @@ router.post('/respect/:userId', requireAuth, async (req, res) => {
   // Recalculate balance (respects - disrespects)
   await recalculateUserBalance(toUserId);
   
-  req.session.flash = { type: 'success', message: `You gave respect to ${toUser.name}! 🟢` };
+  req.session.flash = { type: 'success', message: `You gave respect to ${toUser.name}! 👍` };
   res.redirect('/');
 });
 
@@ -84,7 +84,7 @@ router.post('/disrespect/:userId', requireAuth, async (req, res) => {
   // Recalculate balance (respects - disrespects)
   await recalculateUserBalance(toUserId);
   
-  req.session.flash = { type: 'success', message: `You gave disrespect to ${toUser.name}! 🔴` };
+  req.session.flash = { type: 'success', message: `You gave disrespect to ${toUser.name}! 👎` };
   res.redirect('/');
 });
 

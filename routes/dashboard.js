@@ -3,6 +3,7 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const { dbGet } = require('../config/database');
 const { getLeaderboard, getRecentTransactions, getPendingCompletionsCount, getUnreadNotificationsCount } = require('../utils/stats');
+const { getChangelog } = require('../utils/changelog');
 
 // GET /
 router.get('/', requireAuth, async (req, res) => {
@@ -13,13 +14,15 @@ router.get('/', requireAuth, async (req, res) => {
   const transactions = await getRecentTransactions();
   const pendingCount = req.session.user.is_admin ? await getPendingCompletionsCount() : 0;
   const notificationCount = req.session.user.is_admin ? await getUnreadNotificationsCount(req.session.user.id) : 0;
+  const changelog = getChangelog();
   
   res.render('index', { 
     leaderboard, 
     transactions,
     currentUser: req.session.user,
     pendingCount,
-    notificationCount
+    notificationCount,
+    changelog
   });
 });
 

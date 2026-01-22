@@ -27,24 +27,38 @@
   </style>
 </head>
 <body class="bg-slate-900 text-white min-h-screen pb-24">
-  <div class="max-w-2xl mx-auto px-4 py-6">
+  <div class="max-w-2xl mx-auto px-4 py-6 relative">
+    <!-- Changelog Icon - Top Right (mobile-friendly) -->
+    <button 
+      onclick="showChangelogModal()"
+      class="fixed top-4 right-4 z-40 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition-all hover:scale-110 shadow-lg"
+      title="Changelog"
+    >
+      <span class="text-xl sm:text-2xl">📖</span>
+      <% if (changelog && changelog.length > 0) { %>
+      <span class="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-blue-600 text-white text-[10px] sm:text-xs font-bold rounded-full flex items-center justify-center">
+        <%= changelog[0].version.split('.')[0] %>
+      </span>
+      <% } %>
+    </button>
+
     <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
-      <div class="flex items-center gap-3">
-        <span class="text-4xl"><%= currentUser.avatar_emoji %></span>
-        <div>
-          <h1 class="text-xl font-bold text-white"><%= currentUser.name %></h1>
+    <div class="flex items-center justify-between mb-6 pt-2">
+      <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+        <span class="text-3xl sm:text-4xl flex-shrink-0"><%= currentUser.avatar_emoji %></span>
+        <div class="min-w-0 flex-1">
+          <h1 class="text-lg sm:text-xl font-bold text-white truncate"><%= currentUser.name %></h1>
           <% if (!currentUser.is_admin) { %>
-          <div class="flex items-center gap-2 text-yellow-400">
-            <span class="text-lg">🥚</span>
-            <span class="font-bold"><%= currentUser.balance %></span>
+          <div class="flex items-center gap-1.5 sm:gap-2 text-yellow-400">
+            <span class="text-base sm:text-lg">🥚</span>
+            <span class="font-bold text-sm sm:text-base"><%= currentUser.balance %></span>
           </div>
           <% } else { %>
-          <div class="text-sm text-slate-400">Admin</div>
+          <div class="text-xs sm:text-sm text-slate-400">Admin</div>
           <% } %>
         </div>
       </div>
-      <div class="text-3xl">🏆</div>
+      <div class="hidden sm:block text-2xl sm:text-3xl flex-shrink-0 ml-2">🏆</div>
     </div>
 
     <!-- Leaderboard -->
@@ -54,68 +68,72 @@
       </h2>
       <div class="space-y-3">
         <% leaderboard.forEach((player, index) => { %>
-        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 card-hover <%= index === 0 ? 'border-yellow-500/50 glow-gold' : '' %>">
-          <div class="flex items-center gap-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-3 sm:p-4 card-hover <%= index === 0 ? 'border-yellow-500/50 glow-gold' : '' %>">
+          <div class="flex items-start gap-2 sm:gap-3">
             <!-- Rank & Avatar -->
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 flex items-center justify-center rounded-full 
+            <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <div class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full 
                           <%= index === 0 ? 'bg-yellow-500 text-slate-900' : index === 1 ? 'bg-slate-400 text-slate-900' : index === 2 ? 'bg-orange-600 text-white' : 'bg-slate-700 text-slate-400' %> 
-                          font-bold text-sm">
+                          font-bold text-xs sm:text-sm">
                 <%= index + 1 %>
               </div>
-              <span class="text-3xl"><%= player.avatar_emoji %></span>
+              <span class="text-2xl sm:text-3xl"><%= player.avatar_emoji %></span>
             </div>
             
             <!-- Name & Stats -->
-            <div class="flex-1">
-              <h3 class="font-semibold text-white flex items-center gap-2">
-                <%= player.name %>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-semibold text-white flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <span class="truncate"><%= player.name %></span>
                 <% if (player.is_admin) { %>
-                  <span class="text-xs bg-purple-600 px-2 py-0.5 rounded-full">Admin</span>
+                  <span class="text-[10px] sm:text-xs bg-purple-600 px-1.5 sm:px-2 py-0.5 rounded-full flex-shrink-0">Admin</span>
                 <% } %>
                 <% if (player.id === currentUser.id) { %>
-                  <span class="text-xs bg-blue-600 px-2 py-0.5 rounded-full">You</span>
+                  <span class="text-[10px] sm:text-xs bg-blue-600 px-1.5 sm:px-2 py-0.5 rounded-full flex-shrink-0">You</span>
                 <% } %>
               </h3>
               
-              <!-- Three Stats Row -->
-              <div class="flex items-center gap-4 mt-2">
+              <!-- Three Stats Row - Responsive with wrapping -->
+              <div class="flex items-center gap-2 sm:gap-3 mt-1.5 sm:mt-2 flex-wrap">
                 <!-- Balance -->
-                <div class="flex items-center gap-1.5">
-                  <span class="text-yellow-400 text-sm">🥚</span>
-                  <span class="font-bold text-yellow-400"><%= player.balance %></span>
+                <div class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                  <span class="text-yellow-400 text-xs sm:text-sm">🥚</span>
+                  <span class="font-bold text-yellow-400 text-xs sm:text-sm whitespace-nowrap"><%= player.balance %></span>
                 </div>
                 
                 <!-- Respects Count -->
-                <div class="flex items-center gap-1.5">
-                  <span class="text-lg">👍</span>
-                  <span class="font-medium text-green-400"><%= player.stats.respects %></span>
+                <div class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                  <span class="text-base sm:text-lg">👍</span>
+                  <span class="font-medium text-green-400 text-xs sm:text-sm whitespace-nowrap"><%= player.stats.respects %></span>
                 </div>
                 
                 <!-- Disrespects Count -->
-                <div class="flex items-center gap-1.5">
-                  <span class="text-lg">👎</span>
-                  <span class="font-medium text-red-400"><%= player.stats.disrespects %></span>
+                <div class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                  <span class="text-base sm:text-lg">👎</span>
+                  <span class="font-medium text-red-400 text-xs sm:text-sm whitespace-nowrap"><%= player.stats.disrespects %></span>
                 </div>
               </div>
             </div>
             
             <!-- Action Buttons (only admins can give respects/disrespects, and only to other users) -->
             <% if (currentUser.is_admin && player.id !== currentUser.id) { %>
-            <div class="flex gap-2">
+            <div class="flex gap-1.5 sm:gap-2 flex-shrink-0">
               <button 
-                onclick="showModal('respect', <%= player.id %>, '<%= player.name %>')"
-                class="w-10 h-10 flex items-center justify-center bg-green-600 hover:bg-green-500 rounded-xl transition-colors glow-green"
+                data-action="respect"
+                data-user-id="<%= player.id %>"
+                data-user-name="<%= player.name %>"
+                class="action-button w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-green-600 hover:bg-green-500 rounded-xl transition-colors glow-green flex-shrink-0"
                 title="Give Respect"
               >
-                <span class="text-lg">👍</span>
+                <span class="text-base sm:text-lg">👍</span>
               </button>
               <button 
-                onclick="showModal('disrespect', <%= player.id %>, '<%= player.name %>')"
-                class="w-10 h-10 flex items-center justify-center bg-red-600 hover:bg-red-500 rounded-xl transition-colors glow-red"
+                data-action="disrespect"
+                data-user-id="<%= player.id %>"
+                data-user-name="<%= player.name %>"
+                class="action-button w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-red-600 hover:bg-red-500 rounded-xl transition-colors glow-red flex-shrink-0"
                 title="Give Disrespect"
               >
-                <span class="text-lg">👎</span>
+                <span class="text-base sm:text-lg">👎</span>
               </button>
             </div>
             <% } %>
@@ -138,9 +156,9 @@
         <% } else { %>
         <div class="divide-y divide-slate-700">
           <% transactions.forEach(tx => { %>
-          <div class="p-4 flex items-center gap-4">
+          <div class="p-3 sm:p-4 flex items-start sm:items-center gap-2 sm:gap-4">
             <!-- Icon -->
-            <div class="w-10 h-10 flex items-center justify-center rounded-full 
+            <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full flex-shrink-0
                         <%= tx.type === 'RESPECT' ? 'bg-green-900/50 text-green-400' : 
                             tx.type === 'DISRESPECT' ? 'bg-red-900/50 text-red-400' : 
                             tx.type === 'SHOP_PURCHASE' ? 'bg-blue-900/50 text-blue-400' : 
@@ -157,37 +175,37 @@
             </div>
             
             <!-- Details -->
-            <div class="flex-1">
-              <p class="text-sm text-white">
+            <div class="flex-1 min-w-0">
+              <p class="text-xs sm:text-sm text-white break-words">
                 <% if (tx.type === 'RESPECT') { %>
                   <span class="font-medium"><%= tx.from_user_emoji %> <%= tx.from_user_name %></span>
-                  <span class="text-slate-400">gave respect to</span>
+                  <span class="text-slate-400"> gave respect to </span>
                   <span class="font-medium"><%= tx.to_user_emoji %> <%= tx.to_user_name %></span>
                 <% } else if (tx.type === 'DISRESPECT') { %>
                   <span class="font-medium"><%= tx.from_user_emoji %> <%= tx.from_user_name %></span>
-                  <span class="text-slate-400">disrespected</span>
+                  <span class="text-slate-400"> disrespected </span>
                   <span class="font-medium"><%= tx.to_user_emoji %> <%= tx.to_user_name %></span>
                 <% } else if (tx.type === 'SHOP_PURCHASE') { %>
                   <span class="font-medium"><%= tx.from_user_emoji %> <%= tx.from_user_name %></span>
-                  <span class="text-slate-400"><%= tx.description %></span>
+                  <span class="text-slate-400"> <%= tx.description %></span>
                 <% } else { %>
                   <span class="font-medium"><%= tx.to_user_emoji %> <%= tx.to_user_name %></span>
-                  <span class="text-slate-400"><%= tx.description %></span>
+                  <span class="text-slate-400"> <%= tx.description %></span>
                 <% } %>
               </p>
               <% if (tx.type === 'RESPECT' || tx.type === 'DISRESPECT') { %>
                 <% if (tx.description && tx.description !== 'Gave respect' && tx.description !== 'Gave disrespect') { %>
-                  <p class="text-xs text-slate-500 mt-1">"<%= tx.description %>"</p>
+                  <p class="text-[10px] sm:text-xs text-slate-500 mt-1 break-words">"<%= tx.description %>"</p>
                 <% } %>
               <% } %>
             </div>
             
             <!-- Amount & Time -->
-            <div class="text-right">
-              <div class="font-bold <%= tx.amount > 0 ? 'text-green-400' : 'text-red-400' %>">
+            <div class="text-right flex-shrink-0 ml-2">
+              <div class="font-bold text-xs sm:text-sm <%= tx.amount > 0 ? 'text-green-400' : 'text-red-400' %>">
                 <%= tx.amount > 0 ? '+' : '' %><%= tx.amount %>
               </div>
-              <div class="text-xs text-slate-500">
+              <div class="text-[10px] sm:text-xs text-slate-500">
                 <%= new Date(tx.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %>
               </div>
             </div>
@@ -235,6 +253,44 @@
     </div>
   </div>
 
+  <!-- Changelog Modal -->
+  <div id="changelog-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md max-h-[80vh] flex flex-col">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+          <span>📖</span> Changelog
+        </h3>
+        <button 
+          onclick="hideChangelogModal()"
+          class="text-slate-400 hover:text-white transition-colors"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="overflow-y-auto flex-1 pr-2">
+        <% if (changelog && changelog.length > 0) { %>
+          <% changelog.forEach((entry, index) => { %>
+            <div class="<%= index > 0 ? 'mt-4 pt-4 border-t border-slate-700' : '' %>">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="font-bold text-yellow-400">v<%= entry.version %></span>
+                <span class="text-xs text-slate-400"><%= entry.date %></span>
+              </div>
+              <ul class="list-disc list-inside space-y-1 text-sm text-slate-300 ml-2">
+                <% entry.changes.forEach(change => { %>
+                  <li><%= change %></li>
+                <% }); %>
+              </ul>
+            </div>
+          <% }); %>
+        <% } else { %>
+          <p class="text-slate-400 text-sm">No changelog entries yet.</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
   <!-- Fixed Bottom Navigation -->
   <nav class="fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-slate-700 z-40">
     <div class="max-w-lg mx-auto px-4">
@@ -260,7 +316,7 @@
           <span class="text-xs font-medium">Shop</span>
         </a>
         
-        <% if (user.is_admin) { %>
+        <% if (currentUser.is_admin) { %>
         <a href="/admin" class="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors relative">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -318,6 +374,18 @@
   <% } %>
 
   <script>
+    function showChangelogModal() {
+      const modal = document.getElementById('changelog-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+    
+    function hideChangelogModal() {
+      const modal = document.getElementById('changelog-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
     function showModal(type, userId, userName) {
       const modal = document.getElementById('action-modal');
       const title = document.getElementById('modal-title');
@@ -346,9 +414,25 @@
       modal.classList.remove('flex');
     }
     
+    // Event delegation for action buttons
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.action-button')) {
+        const button = e.target.closest('.action-button');
+        const action = button.getAttribute('data-action');
+        const userId = parseInt(button.getAttribute('data-user-id'));
+        const userName = button.getAttribute('data-user-name');
+        showModal(action, userId, userName);
+      }
+    });
+    
     // Close modal on backdrop click
     document.getElementById('action-modal').addEventListener('click', function(e) {
       if (e.target === this) hideModal();
+    });
+    
+    // Close changelog modal on backdrop click
+    document.getElementById('changelog-modal').addEventListener('click', function(e) {
+      if (e.target === this) hideChangelogModal();
     });
   </script>
 </body>

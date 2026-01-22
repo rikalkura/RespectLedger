@@ -144,8 +144,14 @@ async function initDatabase() {
     
     console.log('✅ Database tables created/verified');
     
-    // Seed data - always reset and reseed
-    await seedUsers();
+    // Seed data - only if database is empty
+    const userCount = await dbGet('SELECT COUNT(*) as count FROM Users');
+    if (!userCount || parseInt(userCount.count) === 0) {
+      console.log('📦 Database is empty, seeding initial data...');
+      await seedUsers();
+    } else {
+      console.log(`✅ Database already has ${userCount.count} users, skipping seed`);
+    }
   } catch (error) {
     console.error('Database initialization error:', error);
     throw error;

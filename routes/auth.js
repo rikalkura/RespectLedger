@@ -46,7 +46,8 @@ router.post('/login', async (req, res) => {
 // GET /logout
 router.get('/logout', (req, res) => {
   req.session.destroy();
-  res.redirect('/login');
+  // Redirect with query parameter to trigger local storage cleanup
+  res.redirect('/login?logout=1');
 });
 
 module.exports = router;

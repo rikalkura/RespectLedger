@@ -14,7 +14,16 @@ router.post('/respect/:userId', requireAuth, async (req, res) => {
   
   const toUserId = parseInt(req.params.userId);
   const fromUserId = req.session.user.id;
-  const { description } = req.body;
+  const { description, amount } = req.body;
+  
+  // Parse amount, default to 1 if not provided or invalid
+  const respectAmount = parseInt(amount) || 1;
+  
+  // Validate amount (must be positive)
+  if (respectAmount <= 0) {
+    req.session.flash = { type: 'error', message: 'Amount must be greater than 0!' };
+    return res.redirect('/');
+  }
   
   if (toUserId === fromUserId) {
     req.session.flash = { type: 'error', message: "You can't respect yourself!" };
@@ -36,13 +45,14 @@ router.post('/respect/:userId', requireAuth, async (req, res) => {
   // Create transaction
   await dbRun(`
     INSERT INTO Transactions (from_user_id, to_user_id, type, amount, description)
-    VALUES ($1, $2, 'RESPECT', 1, $3)
-  `, [fromUserId, toUserId, description || 'Gave respect']);
+    VALUES ($1, $2, 'RESPECT', $3, $4)
+  `, [fromUserId, toUserId, respectAmount, description || 'Gave respect']);
   
   // Recalculate balance (respects - disrespects)
   await recalculateUserBalance(toUserId);
   
-  req.session.flash = { type: 'success', message: `You gave respect to ${toUser.name}! 👍` };
+  const amountText = respectAmount === 1 ? 'respect' : `${respectAmount} respects`;
+  req.session.flash = { type: 'success', message: `You gave ${amountText} to ${toUser.name}! 👍` };
   res.redirect('/');
 });
 
@@ -56,7 +66,16 @@ router.post('/disrespect/:userId', requireAuth, async (req, res) => {
   
   const toUserId = parseInt(req.params.userId);
   const fromUserId = req.session.user.id;
-  const { description } = req.body;
+  const { description, amount } = req.body;
+  
+  // Parse amount, default to 1 if not provided or invalid
+  const disrespectAmount = parseInt(amount) || 1;
+  
+  // Validate amount (must be positive)
+  if (disrespectAmount <= 0) {
+    req.session.flash = { type: 'error', message: 'Amount must be greater than 0!' };
+    return res.redirect('/');
+  }
   
   if (toUserId === fromUserId) {
     req.session.flash = { type: 'error', message: "You can't disrespect yourself!" };
@@ -75,16 +94,17 @@ router.post('/disrespect/:userId', requireAuth, async (req, res) => {
     return res.redirect('/');
   }
   
-  // Create transaction
+  // Create transaction (negative amount for disrespect)
   await dbRun(`
     INSERT INTO Transactions (from_user_id, to_user_id, type, amount, description)
-    VALUES ($1, $2, 'DISRESPECT', -1, $3)
-  `, [fromUserId, toUserId, description || 'Gave disrespect']);
+    VALUES ($1, $2, 'DISRESPECT', $3, $4)
+  `, [fromUserId, toUserId, -disrespectAmount, description || 'Gave disrespect']);
   
   // Recalculate balance (respects - disrespects)
   await recalculateUserBalance(toUserId);
   
-  req.session.flash = { type: 'success', message: `You gave disrespect to ${toUser.name}! 👎` };
+  const amountText = disrespectAmount === 1 ? 'disrespect' : `${disrespectAmount} disrespects`;
+  req.session.flash = { type: 'success', message: `You gave ${amountText} to ${toUser.name}! 👎` };
   res.redirect('/');
 });
 

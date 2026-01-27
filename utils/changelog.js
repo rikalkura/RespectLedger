@@ -5,6 +5,7 @@ const changelog = [
     date: '2026-01-27',
     changes: [
       'Added "Remember Me" feature - credentials saved in local storage',
+      'Added multiple respects/disrespects feature - long press to send custom amounts'
     ]
   },
   {

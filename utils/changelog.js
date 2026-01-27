@@ -1,6 +1,13 @@
 // Changelog data - track all versions and changes
 const changelog = [
   {
+    version: '1.2.0',
+    date: '2026-01-27',
+    changes: [
+      'Added "Remember Me" feature - credentials saved in local storage',
+    ]
+  },
+  {
     version: '1.1.0',
     date: '2026-01-22',
     changes: [

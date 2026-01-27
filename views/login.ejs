@@ -24,12 +24,12 @@
       <div class="bg-slate-800 rounded-2xl p-6 shadow-2xl border border-slate-700">
         <h2 class="text-xl font-semibold text-white mb-6 text-center">Select Your Character</h2>
         
-        <form action="/login" method="POST" class="space-y-6">
+        <form id="login-form" action="/login" method="POST" class="space-y-6">
           <!-- User Selection -->
           <div class="grid grid-cols-2 gap-3">
             <% users.forEach((u, i) => { %>
               <label class="relative">
-                <input type="radio" name="user_id" value="<%= u.id %>" class="peer sr-only" <%= i === 0 ? 'checked' : '' %> required>
+                <input type="radio" name="user_id" value="<%= u.id %>" class="peer sr-only user-radio" <%= i === 0 ? 'checked' : '' %> required>
                 <div class="bg-slate-700 border-2 border-slate-600 rounded-xl p-4 cursor-pointer transition-all
                             peer-checked:border-yellow-500 peer-checked:bg-slate-600 hover:bg-slate-600">
                   <div class="text-4xl text-center mb-2"><%= u.avatar_emoji %></div>
@@ -43,6 +43,7 @@
           <div>
             <label class="block text-sm font-medium text-slate-300 mb-2">Enter PIN</label>
             <input 
+              id="pin-input"
               type="password" 
               name="pin_code" 
               required
@@ -52,6 +53,19 @@
                      focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent
                      placeholder:text-slate-500"
             >
+          </div>
+
+          <!-- Remember Me Checkbox -->
+          <div class="flex items-center gap-2">
+            <input 
+              type="checkbox" 
+              id="remember-me" 
+              name="remember_me"
+              class="w-4 h-4 text-yellow-500 bg-slate-700 border-slate-600 rounded focus:ring-yellow-500 focus:ring-2"
+            >
+            <label for="remember-me" class="text-sm text-slate-300 cursor-pointer">
+              Remember me on this device
+            </label>
           </div>
 
           <!-- Submit Button -->
@@ -90,5 +104,136 @@
     }, 3000);
   </script>
   <% } %>
+
+  <script>
+    // Local Storage Keys
+    const STORAGE_KEY = 'respectLedger_rememberedUser';
+
+    // Helper functions for encoding/decoding (basic obfuscation)
+    function encodePin(pin) {
+      return btoa(pin); // Base64 encoding for basic obfuscation
+    }
+
+    function decodePin(encodedPin) {
+      try {
+        return atob(encodedPin);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Save credentials to local storage
+    function saveCredentials(userId, pinCode) {
+      const rememberedUser = {
+        user_id: userId,
+        pin_code: encodePin(pinCode),
+        timestamp: Date.now()
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(rememberedUser));
+    }
+
+    // Get saved credentials from local storage
+    function getSavedCredentials() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return null;
+        
+        const rememberedUser = JSON.parse(saved);
+        const decodedPin = decodePin(rememberedUser.pin_code);
+        
+        if (!decodedPin) return null;
+        
+        return {
+          user_id: rememberedUser.user_id,
+          pin_code: decodedPin
+        };
+      } catch (e) {
+        console.error('Error reading saved credentials:', e);
+        return null;
+      }
+    }
+
+    // Clear saved credentials
+    function clearSavedCredentials() {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+
+    // Auto-fill form with saved credentials
+    function autoFillForm(credentials) {
+      if (!credentials) return false;
+
+      // Select the user radio button
+      const userRadio = document.querySelector(`input[type="radio"][name="user_id"][value="${credentials.user_id}"]`);
+      if (userRadio) {
+        userRadio.checked = true;
+        // Trigger change event to update UI
+        userRadio.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      // Fill PIN
+      const pinInput = document.getElementById('pin-input');
+      if (pinInput) {
+        pinInput.value = credentials.pin_code;
+      }
+
+      return true;
+    }
+
+    // Auto-login with saved credentials
+    function performAutoLogin() {
+      const credentials = getSavedCredentials();
+      if (!credentials) return false;
+
+      // Find user radio button
+      const userRadio = document.querySelector(`input[type="radio"][name="user_id"][value="${credentials.user_id}"]`);
+      if (!userRadio) return false;
+
+      // Auto-fill form
+      if (autoFillForm(credentials)) {
+        // Small delay to ensure form is filled, then auto-submit
+        setTimeout(() => {
+          document.getElementById('login-form').submit();
+        }, 200);
+        return true;
+      }
+      return false;
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if user just logged out - clear saved credentials
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('logout') === '1') {
+        clearSavedCredentials();
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      // Check for saved credentials and auto-login
+      const credentials = getSavedCredentials();
+      if (credentials) {
+        // Automatically log in if saved credentials exist
+        performAutoLogin();
+        return; // Exit early since we're auto-logging in
+      }
+
+      // Handle form submission - save credentials if "Remember me" is checked
+      const loginForm = document.getElementById('login-form');
+      if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+          const rememberMe = document.getElementById('remember-me').checked;
+          const userId = document.querySelector('input[name="user_id"]:checked')?.value;
+          const pinCode = document.getElementById('pin-input').value;
+
+          if (rememberMe && userId && pinCode) {
+            saveCredentials(userId, pinCode);
+          } else if (!rememberMe) {
+            // Clear saved credentials if user unchecks "Remember me"
+            clearSavedCredentials();
+          }
+        });
+      }
+    });
+  </script>
 </body>
 </html>

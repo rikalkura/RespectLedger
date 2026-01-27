@@ -217,11 +217,44 @@
     </div>
   </div>
 
-  <!-- Modal for Respect/Disrespect -->
+  <!-- Modal for Respect/Disrespect (with custom amount) -->
   <div id="action-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md">
       <h3 id="modal-title" class="text-xl font-bold text-white mb-4"></h3>
       <form id="modal-form" method="POST">
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-slate-300 mb-2">Amount</label>
+          <div class="flex items-center gap-3 justify-center">
+            <button 
+              type="button"
+              id="amount-decrease"
+              class="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-xl text-white text-2xl sm:text-3xl font-bold transition-colors
+                     active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled
+            >
+              −
+            </button>
+            <input 
+              type="number" 
+              name="amount" 
+              id="modal-amount"
+              min="1"
+              value="1"
+              required
+              class="w-20 sm:w-24 px-2 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white text-center text-2xl font-bold
+                     focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent
+                     [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            >
+            <button 
+              type="button"
+              id="amount-increase"
+              class="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-xl text-white text-2xl sm:text-3xl font-bold transition-colors
+                     active:scale-95"
+            >
+              +
+            </button>
+          </div>
+        </div>
         <div class="mb-4">
           <label class="block text-sm font-medium text-slate-300 mb-2">Reason (optional)</label>
           <input 
@@ -246,7 +279,7 @@
             type="submit"
             class="flex-1 py-3 font-bold rounded-xl transition-colors"
           >
-            Confirm
+            Send
           </button>
         </div>
       </form>
@@ -386,26 +419,66 @@
       modal.classList.remove('flex');
     }
 
-    function showModal(type, userId, userName) {
+    function updateAmountButtons() {
+      const amountInput = document.getElementById('modal-amount');
+      const decreaseBtn = document.getElementById('amount-decrease');
+      const increaseBtn = document.getElementById('amount-increase');
+      
+      if (!amountInput || !decreaseBtn || !increaseBtn) return;
+      
+      const value = parseInt(amountInput.value) || 1;
+      
+      // Disable decrease button if value is 1
+      decreaseBtn.disabled = value <= 1;
+      
+      // Ensure value is at least 1
+      if (value < 1) {
+        amountInput.value = 1;
+      }
+    }
+    
+    function showModal(type, userId, userName, defaultAmount = 1) {
       const modal = document.getElementById('action-modal');
       const title = document.getElementById('modal-title');
       const form = document.getElementById('modal-form');
       const submit = document.getElementById('modal-submit');
+      const amountInput = document.getElementById('modal-amount');
       
       if (type === 'respect') {
-        title.textContent = `Give Respect to ${userName} 👍`;
+        title.textContent = `How much respect to send to ${userName}?`;
         form.action = `/respect/${userId}`;
         submit.className = 'flex-1 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition-colors';
-        submit.textContent = 'Give Respect';
+        submit.textContent = 'Send';
       } else {
-        title.textContent = `Disrespect ${userName} 👎`;
+        title.textContent = `How much disrespect to send to ${userName}?`;
         form.action = `/disrespect/${userId}`;
         submit.className = 'flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-colors';
-        submit.textContent = 'Disrespect';
+        submit.textContent = 'Send';
+      }
+      
+      // Set default amount
+      if (amountInput) {
+        amountInput.value = defaultAmount;
+        updateAmountButtons();
+      }
+      
+      // Clear description field
+      const descriptionInput = form.querySelector('input[name="description"]');
+      if (descriptionInput) {
+        descriptionInput.value = '';
       }
       
       modal.classList.remove('hidden');
       modal.classList.add('flex');
+      
+      // Update buttons state
+      updateAmountButtons();
+      
+      // Focus on amount input
+      if (amountInput) {
+        setTimeout(() => amountInput.focus(), 100);
+        amountInput.select();
+      }
     }
     
     function hideModal() {
@@ -414,14 +487,172 @@
       modal.classList.remove('flex');
     }
     
+    // Submit immediately with amount=1 (short tap behavior)
+    function submitImmediate(action, userId) {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/${action}/${userId}`;
+      
+      const amountInput = document.createElement('input');
+      amountInput.type = 'hidden';
+      amountInput.name = 'amount';
+      amountInput.value = '1';
+      form.appendChild(amountInput);
+      
+      document.body.appendChild(form);
+      form.submit();
+    }
+    
+    
+    // Long press detection variables (shared across handlers)
+    let pressTimer = null;
+    let isLongPress = false;
+    let currentButton = null;
+    const LONG_PRESS_DURATION = 500; // 500ms
+    
+    // Handle touch events (mobile)
+    function handleTouchStart(e, action, userId, userName, button) {
+      currentButton = button;
+      isLongPress = false;
+      pressTimer = setTimeout(() => {
+        isLongPress = true;
+        // Show modal for custom amount
+        showModal(action, userId, userName);
+      }, LONG_PRESS_DURATION);
+    }
+    
+    function handleTouchEnd(e, action, userId) {
+      clearTimeout(pressTimer);
+      if (!isLongPress && currentButton) {
+        // Short tap - submit immediately
+        submitImmediate(action, userId);
+      }
+      isLongPress = false;
+      currentButton = null;
+    }
+    
+    // Handle mouse events (desktop)
+    function handleMouseDown(e, action, userId, userName, button) {
+      currentButton = button;
+      isLongPress = false;
+      pressTimer = setTimeout(() => {
+        isLongPress = true;
+        // Show modal for custom amount
+        showModal(action, userId, userName);
+      }, LONG_PRESS_DURATION);
+    }
+    
+    function handleMouseUp(e, action, userId) {
+      clearTimeout(pressTimer);
+      if (!isLongPress && currentButton && e.button === 0) { // Left mouse button only
+        // Short click - submit immediately
+        submitImmediate(action, userId);
+      }
+      isLongPress = false;
+      currentButton = null;
+    }
+    
+    function handleMouseLeave(e) {
+      clearTimeout(pressTimer);
+      isLongPress = false;
+      currentButton = null;
+    }
+    
     // Event delegation for action buttons
-    document.addEventListener('click', function(e) {
-      if (e.target.closest('.action-button')) {
-        const button = e.target.closest('.action-button');
+    // Use event delegation for dynamically added buttons
+    document.body.addEventListener('touchstart', function(e) {
+      const button = e.target.closest('.action-button');
+      if (button) {
         const action = button.getAttribute('data-action');
         const userId = parseInt(button.getAttribute('data-user-id'));
         const userName = button.getAttribute('data-user-name');
-        showModal(action, userId, userName);
+        handleTouchStart(e, action, userId, userName, button);
+      }
+    }, { passive: true });
+    
+    document.body.addEventListener('touchend', function(e) {
+      const button = e.target.closest('.action-button');
+      if (button) {
+        const action = button.getAttribute('data-action');
+        const userId = parseInt(button.getAttribute('data-user-id'));
+        handleTouchEnd(e, action, userId);
+      }
+    });
+    
+    document.body.addEventListener('touchcancel', function(e) {
+      const button = e.target.closest('.action-button');
+      if (button) {
+        clearTimeout(pressTimer);
+        isLongPress = false;
+        currentButton = null;
+      }
+    });
+    
+    // Mouse events for desktop
+    document.body.addEventListener('mousedown', function(e) {
+      const button = e.target.closest('.action-button');
+      if (button && e.button === 0) { // Left mouse button only
+        const action = button.getAttribute('data-action');
+        const userId = parseInt(button.getAttribute('data-user-id'));
+        const userName = button.getAttribute('data-user-name');
+        handleMouseDown(e, action, userId, userName, button);
+      }
+    });
+    
+    document.body.addEventListener('mouseup', function(e) {
+      const button = e.target.closest('.action-button');
+      if (button && e.button === 0) {
+        const action = button.getAttribute('data-action');
+        const userId = parseInt(button.getAttribute('data-user-id'));
+        handleMouseUp(e, action, userId);
+      }
+    });
+    
+    document.body.addEventListener('mouseleave', function(e) {
+      const button = e.target.closest('.action-button');
+      if (button) {
+        handleMouseLeave(e);
+      }
+    });
+    
+    // Prevent context menu on long press
+    document.body.addEventListener('contextmenu', function(e) {
+      if (e.target.closest('.action-button')) {
+        e.preventDefault();
+      }
+    });
+    
+    // Handle amount stepper buttons (using event delegation)
+    document.body.addEventListener('click', function(e) {
+      const decreaseBtn = document.getElementById('amount-decrease');
+      const increaseBtn = document.getElementById('amount-increase');
+      const amountInput = document.getElementById('modal-amount');
+      
+      if (e.target === decreaseBtn && amountInput) {
+        e.preventDefault();
+        const currentValue = parseInt(amountInput.value) || 1;
+        if (currentValue > 1) {
+          amountInput.value = currentValue - 1;
+          updateAmountButtons();
+        }
+      } else if (e.target === increaseBtn && amountInput) {
+        e.preventDefault();
+        const currentValue = parseInt(amountInput.value) || 1;
+        amountInput.value = currentValue + 1;
+        updateAmountButtons();
+      }
+    });
+    
+    // Update buttons when amount input changes (using event delegation)
+    document.body.addEventListener('input', function(e) {
+      if (e.target && e.target.id === 'modal-amount') {
+        updateAmountButtons();
+      }
+    });
+    
+    document.body.addEventListener('change', function(e) {
+      if (e.target && e.target.id === 'modal-amount') {
+        updateAmountButtons();
       }
     });
     

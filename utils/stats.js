@@ -109,6 +109,50 @@ const recalculateAllBalances = async () => {
   }
 };
 
+const getProfileStats = async (userId, days) => {
+  return await dbAll(`
+    SELECT
+      TO_CHAR(DATE_TRUNC('day', timestamp), 'YYYY-MM-DD') AS day,
+      COALESCE(SUM(CASE WHEN type = 'RESPECT' OR type = 'QUEST_REWARD' THEN amount ELSE 0 END), 0) AS respects,
+      COALESCE(SUM(CASE WHEN type = 'DISRESPECT' THEN ABS(amount) ELSE 0 END), 0) AS disrespects
+    FROM Transactions
+    WHERE to_user_id = $1
+      AND timestamp >= NOW() - INTERVAL '1 day' * $2
+    GROUP BY 1
+    ORDER BY 1 ASC
+  `, [userId, days]);
+};
+
+const getProfileStatsByMonth = async (userId, months) => {
+  return await dbAll(`
+    SELECT
+      TO_CHAR(DATE_TRUNC('month', timestamp), 'YYYY-MM') AS month,
+      COALESCE(SUM(CASE WHEN type = 'RESPECT' OR type = 'QUEST_REWARD' THEN amount ELSE 0 END), 0) AS respects,
+      COALESCE(SUM(CASE WHEN type = 'DISRESPECT' THEN ABS(amount) ELSE 0 END), 0) AS disrespects
+    FROM Transactions
+    WHERE to_user_id = $1
+      AND timestamp >= NOW() - INTERVAL '1 month' * $2
+    GROUP BY 1
+    ORDER BY 1 ASC
+  `, [userId, months]);
+};
+
+const getUserTransactionHistory = async (userId) => {
+  return await dbAll(`
+    SELECT t.*, u.name as from_user_name, u.avatar_emoji as from_user_avatar
+    FROM Transactions t
+    LEFT JOIN Users u ON t.from_user_id = u.id
+    WHERE t.to_user_id = $1
+    ORDER BY t.timestamp DESC
+  `, [userId]);
+};
+
+const getUserRank = async (userId) => {
+  const rows = await dbAll('SELECT id FROM Users WHERE is_admin = 0 ORDER BY balance DESC');
+  const index = rows.findIndex(r => r.id === userId);
+  return index === -1 ? null : index + 1;
+};
+
 module.exports = {
   getUserStats,
   getLeaderboard,
@@ -117,5 +161,9 @@ module.exports = {
   getPendingPurchasesCount,
   getUnreadNotificationsCount,
   recalculateUserBalance,
-  recalculateAllBalances
+  recalculateAllBalances,
+  getProfileStats,
+  getProfileStatsByMonth,
+  getUserTransactionHistory,
+  getUserRank
 };

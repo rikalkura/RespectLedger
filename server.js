@@ -10,6 +10,7 @@ const actionsRoutes = require('./routes/actions');
 const questsRoutes = require('./routes/quests');
 const shopRoutes = require('./routes/shop');
 const adminRoutes = require('./routes/admin');
+const profileRoutes = require('./routes/profile');
 
 // Import middleware
 const flashMiddleware = require('./middleware/flash');
@@ -45,6 +46,7 @@ app.use('/', actionsRoutes);
 app.use('/', questsRoutes);
 app.use('/', shopRoutes);
 app.use('/', adminRoutes);
+app.use('/profile', profileRoutes);
 
 // ============================================
 // START SERVER

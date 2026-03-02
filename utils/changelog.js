@@ -1,6 +1,13 @@
 // Changelog data - track all versions and changes
 const changelog = [
   {
+    version: '1.3.0',
+    date: '2026-03-02',
+    changes: [
+      'Added User Profile page - click any player on the leaderboard to view their profile'
+    ]
+  },
+  {
     version: '1.2.0',
     date: '2026-01-27',
     changes: [

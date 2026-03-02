@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= profileUser.name %> - Profile</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: '#FFD700'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .glow-gold { box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+  </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen pb-24">
+  <div class="max-w-2xl mx-auto px-4 py-6">
+
+    <!-- Back Button -->
+    <a href="/" class="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-6">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      <span class="text-sm font-medium">Back to Leaderboard</span>
+    </a>
+
+    <!-- Hero Card -->
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 mb-6 <%= rank === 1 ? 'border-yellow-500/50 glow-gold' : '' %>">
+      <div class="flex items-center gap-4 mb-4">
+        <span class="text-5xl"><%= profileUser.avatar_emoji %></span>
+        <div>
+          <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+            <%= profileUser.name %>
+            <% if (profileUser.id === currentUser.id) { %>
+              <span class="text-xs bg-blue-600 px-2 py-0.5 rounded-full">You</span>
+            <% } %>
+          </h1>
+          <% if (rank) { %>
+          <div class="flex items-center gap-1.5 mt-1">
+            <div class="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold
+                        <%= rank === 1 ? 'bg-yellow-500 text-slate-900' : rank === 2 ? 'bg-slate-400 text-slate-900' : rank === 3 ? 'bg-orange-600 text-white' : 'bg-slate-700 text-slate-400' %>">
+              <%= rank %>
+            </div>
+            <span class="text-sm text-slate-400">
+              <%= rank === 1 ? '1st place' : rank === 2 ? '2nd place' : rank === 3 ? '3rd place' : rank + 'th place' %>
+            </span>
+          </div>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3">
+        <div class="bg-slate-700/50 rounded-xl p-3 text-center">
+          <div class="text-2xl mb-1">🥚</div>
+          <div class="text-xl font-bold text-yellow-400"><%= profileUser.balance %></div>
+          <div class="text-xs text-slate-400">Eggs</div>
+        </div>
+        <div class="bg-slate-700/50 rounded-xl p-3 text-center">
+          <div class="text-2xl mb-1">👍</div>
+          <div class="text-xl font-bold text-green-400"><%= stats.respects %></div>
+          <div class="text-xs text-slate-400">Respects</div>
+        </div>
+        <div class="bg-slate-700/50 rounded-xl p-3 text-center">
+          <div class="text-2xl mb-1">👎</div>
+          <div class="text-xl font-bold text-red-400"><%= stats.disrespects %></div>
+          <div class="text-xs text-slate-400">Disrespects</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Statistics Section -->
+    <div class="mb-6">
+      <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+        <span>📊</span> Statistics
+      </h2>
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 sm:p-6">
+        <!-- Period Toggle -->
+        <div class="flex gap-2 mb-4">
+          <button id="btn-week" onclick="switchPeriod('week')"
+                  class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors bg-yellow-500 text-slate-900">
+            1 Week
+          </button>
+          <button id="btn-month" onclick="switchPeriod('month')"
+                  class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors bg-slate-700 text-slate-300 hover:bg-slate-600">
+            1 Month
+          </button>
+          <button id="btn-year" onclick="switchPeriod('year')"
+                  class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors bg-slate-700 text-slate-300 hover:bg-slate-600">
+            1 Year
+          </button>
+        </div>
+        <!-- Charts -->
+        <div id="chart-week" class="relative" style="height: 260px;">
+          <canvas id="weekChart"></canvas>
+        </div>
+        <div id="chart-month" class="relative hidden" style="height: 260px;">
+          <canvas id="monthChart"></canvas>
+        </div>
+        <div id="chart-year" class="relative hidden" style="height: 260px;">
+          <canvas id="yearChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transaction History -->
+    <div class="mb-6">
+      <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+        <span>📜</span> Transaction History
+      </h2>
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+        <% if (transactions.length === 0) { %>
+        <div class="p-6 text-center text-slate-400">
+          No transactions yet.
+        </div>
+        <% } else { %>
+        <div class="divide-y divide-slate-700">
+          <% transactions.forEach(tx => { %>
+          <div class="p-3 sm:p-4 flex items-start sm:items-center gap-2 sm:gap-4">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full flex-shrink-0
+                        <%= tx.type === 'RESPECT' ? 'bg-green-900/50 text-green-400' :
+                            tx.type === 'DISRESPECT' ? 'bg-red-900/50 text-red-400' :
+                            tx.type === 'SHOP_PURCHASE' ? 'bg-blue-900/50 text-blue-400' :
+                            'bg-purple-900/50 text-purple-400' %>">
+              <% if (tx.type === 'RESPECT') { %>
+                👍
+              <% } else if (tx.type === 'DISRESPECT') { %>
+                👎
+              <% } else if (tx.type === 'SHOP_PURCHASE') { %>
+                🛒
+              <% } else { %>
+                ⚔️
+              <% } %>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <p class="text-xs sm:text-sm text-white break-words">
+                <% if (tx.type === 'RESPECT') { %>
+                  <span class="font-medium"><%= tx.from_user_avatar %> <%= tx.from_user_name %></span>
+                  <span class="text-slate-400"> gave respect</span>
+                <% } else if (tx.type === 'DISRESPECT') { %>
+                  <span class="font-medium"><%= tx.from_user_avatar %> <%= tx.from_user_name %></span>
+                  <span class="text-slate-400"> disrespected</span>
+                <% } else { %>
+                  <span class="text-slate-400"><%= tx.description %></span>
+                <% } %>
+              </p>
+              <% if ((tx.type === 'RESPECT' || tx.type === 'DISRESPECT') && tx.description && tx.description !== 'Gave respect' && tx.description !== 'Gave disrespect') { %>
+                <p class="text-[10px] sm:text-xs text-slate-500 mt-1 break-words">"<%= tx.description %>"</p>
+              <% } %>
+            </div>
+
+            <div class="text-right flex-shrink-0 ml-2">
+              <div class="font-bold text-xs sm:text-sm <%= tx.amount > 0 ? 'text-green-400' : 'text-red-400' %>">
+                <%= tx.amount > 0 ? '+' : '' %><%= tx.amount %>
+              </div>
+              <div class="text-[10px] sm:text-xs text-slate-500">
+                <%
+                  const now = new Date();
+                  const txDate = new Date(tx.timestamp);
+                  const diffMs = now - txDate;
+                  const diffMins = Math.floor(diffMs / 60000);
+                  const diffHours = Math.floor(diffMs / 3600000);
+                  const diffDays = Math.floor(diffMs / 86400000);
+                  let timeAgo;
+                  if (diffMins < 1) timeAgo = 'just now';
+                  else if (diffMins < 60) timeAgo = diffMins + 'm ago';
+                  else if (diffHours < 24) timeAgo = diffHours + 'h ago';
+                  else if (diffDays < 7) timeAgo = diffDays + 'd ago';
+                  else timeAgo = txDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                %>
+                <%= timeAgo %>
+              </div>
+            </div>
+          </div>
+          <% }); %>
+        </div>
+        <% } %>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Navigation (same as index.ejs) -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-slate-700 z-40">
+    <div class="max-w-lg mx-auto px-4">
+      <div class="flex justify-around items-center h-16">
+        <a href="/" class="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+          </svg>
+          <span class="text-xs font-medium">Home</span>
+        </a>
+        <a href="/quests" class="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+          </svg>
+          <span class="text-xs font-medium">Quests</span>
+        </a>
+        <a href="/shop" class="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+          </svg>
+          <span class="text-xs font-medium">Shop</span>
+        </a>
+        <% if (currentUser.is_admin) { %>
+        <a href="/admin" class="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span class="text-xs font-medium">Admin</span>
+        </a>
+        <% } %>
+        <a href="/logout" class="flex flex-col items-center gap-1 text-slate-400 hover:text-red-400 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+          <span class="text-xs font-medium">Logout</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <script>
+    const weekRaw = <%- JSON.stringify(weekStats) %>;
+    const monthRaw = <%- JSON.stringify(monthStats) %>;
+    const yearRaw = <%- JSON.stringify(yearStats) %>;
+
+    function localDateKey(date) {
+      const d = new Date(date);
+      return d.getFullYear() + '-' +
+        String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        String(d.getDate()).padStart(2, '0');
+    }
+
+    function buildDayLabels(days) {
+      const labels = [];
+      const now = new Date();
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        labels.push(d);
+      }
+      return labels;
+    }
+
+    function mapDataToDays(raw, dayDates) {
+      const lookup = {};
+      raw.forEach(r => {
+        lookup[r.day] = r;
+      });
+      const respects = [];
+      const disrespects = [];
+      dayDates.forEach(d => {
+        const key = localDateKey(d);
+        const entry = lookup[key];
+        respects.push(entry ? parseInt(entry.respects) : 0);
+        disrespects.push(entry ? parseInt(entry.disrespects) : 0);
+      });
+      return { respects, disrespects };
+    }
+
+    function buildMonthLabels(months) {
+      const labels = [];
+      const now = new Date();
+      for (let i = months - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        labels.push(d);
+      }
+      return labels;
+    }
+
+    function localMonthKey(date) {
+      const d = new Date(date);
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+
+    function mapDataToMonths(raw, monthDates) {
+      const lookup = {};
+      raw.forEach(r => { lookup[r.month] = r; });
+      const respects = [];
+      const disrespects = [];
+      monthDates.forEach(d => {
+        const key = localMonthKey(d);
+        const entry = lookup[key];
+        respects.push(entry ? parseInt(entry.respects) : 0);
+        disrespects.push(entry ? parseInt(entry.disrespects) : 0);
+      });
+      return { respects, disrespects };
+    }
+
+    function formatLabel(date, short) {
+      if (short) return date.toLocaleDateString('en-US', { weekday: 'short' });
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    const chartOptions = (maxTick) => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: { color: '#94a3b8', font: { size: 12 }, usePointStyle: true, pointStyle: 'circle' }
+        },
+        tooltip: {
+          backgroundColor: '#1e293b',
+          titleColor: '#f8fafc',
+          bodyColor: '#cbd5e1',
+          borderColor: '#334155',
+          borderWidth: 1,
+          cornerRadius: 8,
+          padding: 10
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(51,65,85,0.5)' },
+          ticks: { color: '#64748b', font: { size: 11 } }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(51,65,85,0.5)' },
+          ticks: {
+            color: '#64748b',
+            font: { size: 11 },
+            stepSize: 1,
+            precision: 0
+          }
+        }
+      }
+    });
+
+    function createChart(canvasId, labels, data) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      return new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Respects',
+              data: data.respects,
+              backgroundColor: 'rgba(34,197,94,0.7)',
+              borderColor: 'rgb(34,197,94)',
+              borderWidth: 1,
+              borderRadius: 4
+            },
+            {
+              label: 'Disrespects',
+              data: data.disrespects,
+              backgroundColor: 'rgba(239,68,68,0.7)',
+              borderColor: 'rgb(239,68,68)',
+              borderWidth: 1,
+              borderRadius: 4
+            }
+          ]
+        },
+        options: chartOptions()
+      });
+    }
+
+    const weekDays = buildDayLabels(7);
+    const monthDays = buildDayLabels(30);
+    const yearMonths = buildMonthLabels(12);
+
+    const weekData = mapDataToDays(weekRaw, weekDays);
+    const monthData = mapDataToDays(monthRaw, monthDays);
+    const yearData = mapDataToMonths(yearRaw, yearMonths);
+
+    const weekLabels = weekDays.map(d => formatLabel(d, true));
+    const monthLabels = monthDays.map(d => formatLabel(d, false));
+    const yearLabels = yearMonths.map(d => d.toLocaleDateString('en-US', { month: 'short' }));
+
+    const weekChart = createChart('weekChart', weekLabels, weekData);
+    const monthChart = createChart('monthChart', monthLabels, monthData);
+    const yearChart = createChart('yearChart', yearLabels, yearData);
+
+    function switchPeriod(period) {
+      const active = 'px-4 py-2 rounded-xl text-sm font-semibold transition-colors bg-yellow-500 text-slate-900';
+      const inactive = 'px-4 py-2 rounded-xl text-sm font-semibold transition-colors bg-slate-700 text-slate-300 hover:bg-slate-600';
+
+      ['week', 'month', 'year'].forEach(p => {
+        document.getElementById('btn-' + p).className = p === period ? active : inactive;
+        document.getElementById('chart-' + p).classList.toggle('hidden', p !== period);
+      });
+    }
+  </script>
+</body>
+</html>

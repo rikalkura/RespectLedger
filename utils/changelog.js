@@ -1,6 +1,13 @@
 // Changelog data - track all versions and changes
 const changelog = [
   {
+    version: '1.4.0',
+    date: '2026-03-03',
+    changes: [
+      'Added Telegram bot notifications - respect and disrespect actions are sent to a configured Telegram group'
+    ]
+  },
+  {
     version: '1.3.0',
     date: '2026-03-02',
     changes: [

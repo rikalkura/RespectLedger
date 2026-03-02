@@ -3,6 +3,7 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const { dbGet, dbRun } = require('../config/database');
 const { recalculateUserBalance } = require('../utils/stats');
+const { sendTelegramMessage } = require('../utils/telegram');
 
 // POST /respect/:userId
 router.post('/respect/:userId', requireAuth, async (req, res) => {
@@ -51,6 +52,10 @@ router.post('/respect/:userId', requireAuth, async (req, res) => {
   // Recalculate balance (respects - disrespects)
   await recalculateUserBalance(toUserId);
   
+  const adminName = req.session.user.name;
+  const msg = `✅ <b>${respectAmount} Respect</b>\n<b>${adminName}</b> gave ${respectAmount} respect to <b>${toUser.name}</b>\nReason: ${description || 'No reason given'}`;
+  sendTelegramMessage(msg).catch(console.error);
+
   const amountText = respectAmount === 1 ? 'respect' : `${respectAmount} respects`;
   req.session.flash = { type: 'success', message: `You gave ${amountText} to ${toUser.name}! 👍` };
   res.redirect('/');
@@ -103,6 +108,10 @@ router.post('/disrespect/:userId', requireAuth, async (req, res) => {
   // Recalculate balance (respects - disrespects)
   await recalculateUserBalance(toUserId);
   
+  const adminName = req.session.user.name;
+  const msg = `❌ <b>${disrespectAmount} Disrespect</b>\n<b>${adminName}</b> gave ${disrespectAmount} disrespect to <b>${toUser.name}</b>\nReason: ${description || 'No reason given'}`;
+  sendTelegramMessage(msg).catch(console.error);
+
   const amountText = disrespectAmount === 1 ? 'disrespect' : `${disrespectAmount} disrespects`;
   req.session.flash = { type: 'success', message: `You gave ${amountText} to ${toUser.name}! 👎` };
   res.redirect('/');

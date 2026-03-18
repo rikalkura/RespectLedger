@@ -1,6 +1,15 @@
 // Changelog data - track all versions and changes
 const changelog = [
   {
+    version: '1.5.0',
+    date: '2026-03-18',
+    changes: [
+      'Redesigned telegram notifications',
+      'Telegram notifications for quests - notifies when a quest is registered and when a quest is completed',
+      'Telegram notifications for shop - notifies when a new item is added and when someone makes a purchase'
+    ]
+  },
+  {
     version: '1.4.0',
     date: '2026-03-03',
     changes: [

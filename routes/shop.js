@@ -3,6 +3,7 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const { dbGet, dbAll, dbRun } = require('../config/database');
 const { getPendingCompletionsCount, getUnreadNotificationsCount, recalculateUserBalance } = require('../utils/stats');
+const { sendTelegramMessage, buildShopPurchasedMessage } = require('../utils/telegram');
 
 // GET /shop
 router.get('/shop', requireAuth, async (req, res) => {
@@ -56,6 +57,13 @@ router.post('/shop/buy/:itemId', requireAuth, async (req, res) => {
       VALUES ('SHOP_PURCHASE', $1, $2, $3, 0)
     `, [admin.id, itemId, `${user.name} (${user.avatar_emoji}) wants to buy "${item.name}" for ${item.price} 🥚`]);
   }
+  
+  const updatedUser = await dbGet('SELECT balance FROM Users WHERE id = $1', [userId]);
+  const msg = buildShopPurchasedMessage({
+    userName: user.name, itemName: item.name,
+    price: item.price, balance: updatedUser.balance
+  });
+  sendTelegramMessage(msg).catch(console.error);
   
   req.session.flash = { type: 'success', message: `You bought ${item.name}! 🎉` };
   res.redirect('/shop');

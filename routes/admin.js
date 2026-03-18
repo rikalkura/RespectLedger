@@ -6,6 +6,7 @@ const upload = require('../config/multer');
 const cloudinary = require('../config/cloudinary');
 const { uploadToCloudinary } = require('../utils/cloudinary');
 const { recalculateUserBalance, getUnreadNotificationsCount, getPendingPurchasesCount } = require('../utils/stats');
+const { sendTelegramMessage, buildQuestRegisteredMessage, buildQuestCompletedMessage, buildShopItemAddedMessage } = require('../utils/telegram');
 
 // GET /admin
 router.get('/admin', requireAuth, requireAdmin, async (req, res) => {
@@ -107,6 +108,13 @@ router.post('/admin/quests/approve/:completionId', requireAuth, requireAdmin, as
   // Recalculate balance (respects - disrespects)
   await recalculateUserBalance(completion.user_id);
   
+  const user = await dbGet('SELECT name, balance FROM Users WHERE id = $1', [completion.user_id]);
+  const msg = buildQuestCompletedMessage({
+    questTitle: completion.title, reward: completion.reward,
+    userName: user.name, balance: user.balance
+  });
+  sendTelegramMessage(msg).catch(console.error);
+  
   req.session.flash = { type: 'success', message: `Quest completion approved! +1 respect awarded.` };
   res.redirect('/admin');
 });
@@ -158,6 +166,9 @@ router.post('/admin/items', requireAuth, requireAdmin, upload.single('image'), a
       VALUES ($1, $2, $3, $4)
     `, [name, parseInt(price), imageUrl, cloudinaryPublicId]);
     
+    const msg = buildShopItemAddedMessage({ name, price: parseInt(price) });
+    sendTelegramMessage(msg).catch(console.error);
+    
     req.session.flash = { type: 'success', message: 'Item added successfully!' };
     res.redirect('/admin');
   } catch (error) {
@@ -208,6 +219,9 @@ router.post('/admin/quests', requireAuth, requireAdmin, async (req, res) => {
     INSERT INTO Quests (title, reward, is_active)
     VALUES ($1, $2, 1)
   `, [title, parseInt(reward)]);
+  
+  const msg = buildQuestRegisteredMessage({ title, reward: parseInt(reward) });
+  sendTelegramMessage(msg).catch(console.error);
   
   req.session.flash = { type: 'success', message: 'Quest added successfully!' };
   res.redirect('/admin');

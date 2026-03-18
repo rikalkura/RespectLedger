@@ -54,6 +54,46 @@ function buildDisrespectMessage({ amount, recipient, giver, reason, balance }) {
   ].join('\n');
 }
 
+function buildQuestRegisteredMessage({ title, reward }) {
+  return [
+    '📋 <i>New Quest Available!</i>',
+    '',
+    `<b>${title}</b>`,
+    `Reward: +${reward} 🥚`,
+  ].join('\n');
+}
+
+function buildQuestCompletedMessage({ questTitle, reward, userName, balance }) {
+  return [
+    '🏆 <i>Quest Completed!</i>',
+    '',
+    `<b>${userName}</b> completed "<i>${questTitle}</i>"`,
+    `Reward: +${reward} 🥚`,
+    '',
+    `🏅 Balance: ${balance} 🥚`,
+  ].join('\n');
+}
+
+function buildShopItemAddedMessage({ name, price }) {
+  return [
+    '🛍 <i>New Item in the Shop!</i>',
+    '',
+    `<b>${name}</b>`,
+    `Price: ${price} 🥚`,
+  ].join('\n');
+}
+
+function buildShopPurchasedMessage({ userName, itemName, price, balance }) {
+  return [
+    '🛒 <i>New Shop Purchase!</i>',
+    '',
+    `<b>${userName}</b> buys "<i>${itemName}</i>"`,
+    `Price: ${price} 🥚`,
+    '',
+    `💰 Remaining balance: ${balance} 🥚`,
+  ].join('\n');
+}
+
 async function sendTelegramMessage(text) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -66,4 +106,12 @@ async function sendTelegramMessage(text) {
   });
 }
 
-module.exports = { sendTelegramMessage, buildRespectMessage, buildDisrespectMessage };
+module.exports = {
+  sendTelegramMessage,
+  buildRespectMessage,
+  buildDisrespectMessage,
+  buildQuestRegisteredMessage,
+  buildQuestCompletedMessage,
+  buildShopItemAddedMessage,
+  buildShopPurchasedMessage,
+};

@@ -3,7 +3,7 @@ const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const { dbGet, dbRun } = require('../config/database');
 const { recalculateUserBalance } = require('../utils/stats');
-const { sendTelegramMessage } = require('../utils/telegram');
+const { sendTelegramMessage, buildRespectMessage, buildDisrespectMessage } = require('../utils/telegram');
 
 // POST /respect/:userId
 router.post('/respect/:userId', requireAuth, async (req, res) => {
@@ -50,10 +50,13 @@ router.post('/respect/:userId', requireAuth, async (req, res) => {
   `, [fromUserId, toUserId, respectAmount, description || 'Gave respect']);
   
   // Recalculate balance (respects - disrespects)
-  await recalculateUserBalance(toUserId);
+  const newBalance = await recalculateUserBalance(toUserId);
   
   const adminName = req.session.user.name;
-  const msg = `✅ <b>${respectAmount} Respect</b>\n<b>${adminName}</b> gave ${respectAmount} respect to <b>${toUser.name}</b>\nReason: ${description || 'No reason given'}`;
+  const msg = buildRespectMessage({
+    amount: respectAmount, recipient: toUser.name,
+    giver: adminName, reason: description, balance: newBalance
+  });
   sendTelegramMessage(msg).catch(console.error);
 
   const amountText = respectAmount === 1 ? 'respect' : `${respectAmount} respects`;
@@ -106,10 +109,13 @@ router.post('/disrespect/:userId', requireAuth, async (req, res) => {
   `, [fromUserId, toUserId, -disrespectAmount, description || 'Gave disrespect']);
   
   // Recalculate balance (respects - disrespects)
-  await recalculateUserBalance(toUserId);
+  const newBalance = await recalculateUserBalance(toUserId);
   
   const adminName = req.session.user.name;
-  const msg = `❌ <b>${disrespectAmount} Disrespect</b>\n<b>${adminName}</b> gave ${disrespectAmount} disrespect to <b>${toUser.name}</b>\nReason: ${description || 'No reason given'}`;
+  const msg = buildDisrespectMessage({
+    amount: disrespectAmount, recipient: toUser.name,
+    giver: adminName, reason: description, balance: newBalance
+  });
   sendTelegramMessage(msg).catch(console.error);
 
   const amountText = disrespectAmount === 1 ? 'disrespect' : `${disrespectAmount} disrespects`;
